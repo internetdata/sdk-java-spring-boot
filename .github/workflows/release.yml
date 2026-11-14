@@ -1,0 +1,83 @@
+name: Release
+
+# Publishing to the io.internetdata groupId requires that namespace to be VERIFIED on
+# the Central Portal first, which is a one-off DNS TXT record on internetdata.io. Until
+# that lands, this workflow will fail at the deploy step with a 403.
+on:
+  push:
+    tags: ['v*']
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+          # Writes the ~/.m2/settings.xml server entry the Central Portal plugin reads,
+          # and imports the signing key.
+          server-id: central
+          server-username: CENTRAL_TOKEN_USERNAME
+          server-password: CENTRAL_TOKEN_PASSWORD
+          gpg-private-key: ${{ secrets.GPG_PRIVATE_KEY }}
+          gpg-passphrase: MAVEN_GPG_PASSPHRASE
+      # Maven 3.10 stages maven-metadata-local.xml beside the version directory, which
+      # central-publishing 0.11.0 does not strip, and Central refuses that bundle as content
+      # without a .pom. The runner image moved to 3.10.0 in October 2026, so pin the 3.9 line.
+      - name: Maven 3.9.16
+        run: |
+          curl -fsSLO https://repo1.maven.org/maven2/org/apache/maven/apache-maven/3.9.16/apache-maven-3.9.16-bin.tar.gz
+          echo "831a8591fe20c8243b1dbe7d71e3244f31d1665b0804b2e825e38cbbe5ce0cafb8338851f90780735568773e0a6cd07bbec107cda0b896b008b861075358b6f6  apache-maven-3.9.16-bin.tar.gz" | sha512sum -c -
+          tar -xzf apache-maven-3.9.16-bin.tar.gz -C "$RUNNER_TEMP"
+          rm apache-maven-3.9.16-bin.tar.gz
+          echo "$RUNNER_TEMP/apache-maven-3.9.16/bin" >> "$GITHUB_PATH"
+      - run: mvn -v
+      # The tag only TRIGGERS this; Maven Central publishes whatever pom.xml says.
+      # Without this check, tagging v1.0.1 against a 1.0.0 pom silently republishes
+      # 1.0.0, or fails as "already published" with a confusing message.
+      - name: Tag must match pom.xml version
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          pom="$(mvn -B -q help:evaluate -Dexpression=project.version -DforceStdout)"
+          if [ "$tag" != "$pom" ] ; then
+            echo "tag $tag does not match pom.xml version $pom" >&2
+            exit 1
+          fi
+      - run: mvn -B verify
+      - run: mvn -B -Prelease deploy
+        env:
+          CENTRAL_TOKEN_USERNAME: ${{ secrets.CENTRAL_TOKEN_USERNAME }}
+          CENTRAL_TOKEN_PASSWORD: ${{ secrets.CENTRAL_TOKEN_PASSWORD }}
+          MAVEN_GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+
+  # This version's section of CHANGELOG.md, as the tag's GitHub Release. It
+  # waits for the publish, so no release page names a version the registry
+  # cannot serve, and a re-run edits the release rather than failing on it.
+  github-release:
+    needs: publish
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+      - name: GitHub Release from CHANGELOG.md
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          awk -v v="$version" '/^## /{ if (found) exit; found = ($2 == v); next } found' CHANGELOG.md > notes.md
+          if ! grep -q '^### ' notes.md ; then
+            echo "CHANGELOG.md has no section for ${version}" >&2
+            exit 1
+          fi
+          if gh release view "$GITHUB_REF_NAME" > /dev/null 2>&1 ; then
+            gh release edit "$GITHUB_REF_NAME" --notes-file notes.md
+          else
+            gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --notes-file notes.md --verify-tag
+          fi
