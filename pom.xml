@@ -39,7 +39,7 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.release>17</maven.compiler.release>
-        <internetdata.version>2.9.0</internetdata.version>
+        <internetdata.version>2.10.0</internetdata.version>
         <spring.boot.version>3.5.7</spring.boot.version>
         <spring.version>6.2.12</spring.version>
         <jackson.version>2.22.3</jackson.version>
