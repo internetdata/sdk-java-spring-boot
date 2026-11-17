@@ -2,6 +2,12 @@
 
 What each release changed for you, newest first. Each line is a commit's summary, linked to its full description and diff.
 
+## 1.0.1 - 2026-11-17
+
+### Features
+
+- Require internetdata 2.10.0: cap_reached, an AS's rank and neighbors, and the plan's name ([`9ffd578`](https://github.com/internetdata/sdk-java-spring-boot/commit/9ffd5780aa75e74fd9c75bcdb2c8d9bec42bed86))
+
 ## 1.0.0 - 2026-11-14
 
 ### Features

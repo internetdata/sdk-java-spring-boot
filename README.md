@@ -13,7 +13,7 @@ It looks up the visitor behind each request, where they are, which network they 
 <dependency>
     <groupId>io.internetdata</groupId>
     <artifactId>internetdata-spring-boot-starter</artifactId>
-    <version>1.0.0</version>
+    <version>1.0.1</version>
 </dependency>
 ```
 
