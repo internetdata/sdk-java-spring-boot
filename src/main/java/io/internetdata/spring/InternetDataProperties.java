@@ -12,7 +12,7 @@ import java.util.Map;
 public class InternetDataProperties {
     /**
      * Your API key. Without one a lookup is on Unlimited, the free plan, and every lookup shares the
-     * per-minute limit of the server's one address.
+     * rate limit of the server's one address.
      */
     private String apiKey;
 
