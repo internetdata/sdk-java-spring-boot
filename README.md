@@ -19,7 +19,7 @@ It looks up the visitor behind each request, where they are, which network they 
 
 Requires Java 17 or newer and Spring Boot 3 or 4.
 
-Without an API key a lookup is on Unlimited, the free plan: the country, the network and the company behind the address, Tor, relay, anycast, carrier and satellite space and the service flags, with no daily or monthly cap. Every lookup your app makes comes from your server's one address, though, so a busy site will see bursts refused. A paid plan answers every field, VPN, the proxy flags, hosting, CDN and the city among them; create a key in the [console](https://app.internetdata.io). A free account tries every field.
+Without an API key a lookup is on Unlimited, the free plan: the country, the network and the company behind the address, Tor, relay and anycast, with no daily or monthly cap. Every lookup your app makes comes from your server's one address, though, so a busy site will see bursts refused. A paid plan answers every field, VPN, the proxy flags, hosting, CDN, the bot, carrier, satellite and service flags and the city among them; create a key in the [console](https://app.internetdata.io). A free account tries every field.
 
 ```yaml
 # application.yml
@@ -54,13 +54,13 @@ internetdata:
     - location: { country: [CU, IR, KP] }
 ```
 
-A condition is written in the shape of a served answer, keyed by the same names the API uses, and only the members you name are considered, so it can refuse on anything in the answer. The country works on every plan, and so do the network's type, anycast and satellite space:
+A condition is written in the shape of a served answer, keyed by the same names the API uses, and only the members you name are considered, so it can refuse on anything in the answer. The country works on every plan, and so does anycast; a member your plan leaves out is reported as missing, and blocks nobody:
 
 ```yaml
 block-condition:
-  - asn: { type: hosting }            # the network's type
-  - is_anycast: true                  # anycast and satellite space
-  - is_satellite: true
+  - asn: { type: hosting }            # the network's type, on a paid plan or the trial
+  - is_anycast: true                  # anycast
+  - is_satellite: true                # satellite space, on a paid plan or the trial
   - is_hosting: true                  # traffic from servers, not people
   - is_cdn: true
   - is_vpn: true                      # anonymity
@@ -122,7 +122,7 @@ Beyond a few million distinct visitors a day, stop calling the API per request: 
 
 ## Absent is not false
 
-Unlimited, with a key or without one, leaves out `isVpn()`, `isHosting()`, `isCdn()` and the four proxy flags, the detail behind them, and the paid members inside `location()`, `asn()`, `company()` and `abuse()`, such as `location().getCity()`. A member your plan does not include is an empty `Optional`, or null inside those four objects, which means "not in your plan" rather than "checked, and no".
+Unlimited, with a key or without one, leaves out `isVpn()`, `isHosting()`, `isCdn()`, the four proxy flags and the bot, carrier, satellite and service flags, the detail behind them, and the paid members inside `location()`, `asn()`, `company()` and `abuse()`, such as `location().getCity()`. A member your plan does not include is an empty `Optional`, or null inside those four objects, which means "not in your plan" rather than "checked, and no". The bot, carrier, satellite and service flags are plain booleans, so one your plan leaves out reads `false`, and a `block-condition` on one reports it as missing.
 
 ```java
 result.isVpn().orElse(false)   // when you only want the flag
