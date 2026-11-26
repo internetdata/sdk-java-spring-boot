@@ -2,6 +2,12 @@
 
 What each release changed for you, newest first. Each line is a commit's summary, linked to its full description and diff.
 
+## 2.0.0 - 2026-11-26
+
+### Breaking changes
+
+- Require internetdata 3.0.0: a keyless answer reads again ([`13c9a49`](https://github.com/internetdata/sdk-java-spring-boot/commit/13c9a49376a24f9e73c912388e60c618e52a57e7))
+
 ## 1.0.1 - 2026-11-17
 
 ### Features
