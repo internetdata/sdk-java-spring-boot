@@ -97,7 +97,7 @@ class InternetDataAutoConfigurationTest {
 
     @Test
     void aNetworkTypeFromYamlBlocks() {
-        HttpServer server = serving(UNLIMITED);
+        HttpServer server = serving(PAID);
         try {
             runner(server, "internetdata.block-condition[0].asn.type=hosting").run(context ->
                     assertEquals(403, statusThrough(context.getBean(InternetDataFilter.class))));

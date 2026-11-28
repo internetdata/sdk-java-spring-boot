@@ -121,7 +121,7 @@ class InternetDataFilterTest {
 
     @Test
     void blocksOnANetworkTypeAndOnAnonymityAndPassesACleanAnswer() throws Exception {
-        assertEquals(403, statusFor(UNLIMITED, Map.of("asn", Map.of("type", "hosting"))));
+        assertEquals(403, statusFor(PAID, Map.of("asn", Map.of("type", "hosting"))));
 
         List<Map<String, Object>> anonymity = List.of(Map.of("is_tor", true), Map.of("is_vpn", true));
         assertEquals(403, statusFor(PAID, anonymity));
